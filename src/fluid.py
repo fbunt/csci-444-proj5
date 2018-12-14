@@ -3,15 +3,9 @@
 # A Simple Fluid Solver based on the FFT
 #               Jos Stam
 # http://www.dgp.toronto.edu/people/stam/reality/Research/pdf/jgt01.pdf
-
-import matplotlib.animation as animation
-import matplotlib.pyplot as plt
 import numpy as np
 from scipy.interpolate import griddata
 from scipy.fftpack import fftn, ifftn, fftshift, ifftshift
-
-
-plt.style.use("dark_background")
 
 
 class GridVector:
@@ -36,15 +30,26 @@ class GridVector:
 class FluidSimulator:
     def __init__(self, L=1.0, N=52, visc=0.001, dt=0.25):
         self.L = L
+        # L over 2
+        self.lo2 = L / 2.0
         self.visc = visc
         self.dt = dt
         self.N = N
+        # Elapsed time
+        self.elapsed = 0
+        # Iterations
+        self.its = 0
 
-        self.X = GridVector(self.N, L, coords=True)  # coordinates
-        self.Xs = GridVector(self.N, L, coords=True)  # staggered coords
-        self.U = GridVector(self.N)  # velocity
-        self.A = GridVector(self.N)  # acceleration
-        self.rho = np.zeros((N, N))  # density
+        # Coordinates
+        self.X = GridVector(self.N, L, coords=True)
+        # Staggered Coords
+        self.Xs = GridVector(self.N, L, coords=True)
+        # Velocity
+        self.U = GridVector(self.N)
+        # Acceleration
+        self.A = GridVector(self.N)
+        # Density
+        self.rho = np.zeros((N, N))
 
         # convenience for common calculations
         # for interpolation:
@@ -55,19 +60,19 @@ class FluidSimulator:
         self.Xs.x[:, 1:] = (self.Xs.x[:, 1:] + self.Xs.x[:, :-1]) / 2.0
         self.Xs.y[1:, :] = (self.Xs.y[1:, :] + self.Xs.y[:-1, :]) / 2.0
         # Need N x N, not (N-1) x (N-1) - pad with PBC
-        self.Xs.x[:, 0] = self.Xs.x[:, -1]  # Column 0 = Column N-1 for x
-        self.Xs.y[0, :] = self.X.y[-1, :]  # Row 0 = Row N-1 for y
-        self.r2s = self.Xs.x ** 2 + self.Xs.y ** 2  # staggered radius squared
-        self.eta = np.exp(-self.r2s * self.dt * self.visc)  # visc. attenuation
+        # Column 0 = Column N-1 for x
+        self.Xs.x[:, 0] = self.Xs.x[:, -1]
+        # Row 0 = Row N-1 for y
+        self.Xs.y[0, :] = self.X.y[-1, :]
+        # staggered radius squared
+        self.r2s = self.Xs.x ** 2 + self.Xs.y ** 2
+        # visc. attenuation
+        self.eta = np.exp(-self.r2s * self.dt * self.visc)
 
     def pbc(self, x):
         # Enforce PBC:
-        x[x > self.L / 2.0] = -self.L / 2.0 + x[x > self.L / 2.0] % (
-            self.L / 2.0
-        )
-        x[x < -self.L / 2.0] = self.L / 2.0 - np.abs(x[x < -self.L / 2.0]) % (
-            self.L / 2.0
-        )
+        x[x > self.lo2] = -self.lo2 + (x[x > self.lo2] % self.lo2)
+        x[x < -self.lo2] = self.lo2 - (np.abs(x[x < -self.lo2]) % self.lo2)
         return x
 
     def advect(self, x, xp, yp, method="linear"):
@@ -83,8 +88,8 @@ class FluidSimulator:
         # 2. Advect the velocity fields with semi-lagrangian method
         # Find where would the particle been at the previous time step
         # and apply periodic boundary conditions.
-        xp = self.pbc(self.X.x - self.U.x * self.dt)
-        yp = self.pbc(self.X.y - self.U.y * self.dt)
+        xp = self.pbc(self.X.x - (self.U.x * self.dt))
+        yp = self.pbc(self.X.y - (self.U.y * self.dt))
 
         # Interpolate values at xp,yp back to orignial grid
         self.U.x = self.advect(self.U.x, xp, yp)
@@ -117,6 +122,8 @@ class FluidSimulator:
         # Another hack to dial back the density, avoids having too much
         # material and saturating the color map
         self.rho *= 0.995
+        self.its += 1
+        self.elapsed = self.its * self.dt
 
     def add_particle(self, x0, y0, u0, v0, r):
         """
@@ -144,12 +151,19 @@ class FluidSimulator:
         self.A.y = ay
 
 
+def get_test_simulation():
+    fs = FluidSimulator(L=1.0, N=52, visc=0.001, dt=0.25)
+    # Buoyancy, negative is up in imshow
+    fs.set_force(0, -0.1)
+    return fs
+
+
 # There is a bug I haven't tracked that makes certain values of N error out
 # 52 and 40 work, and are reasonable responsive. Others can be found by trial
 # and error
-fs = FluidSimulator(L=1.0, N=40, visc=0.001, dt=0.25)
+# fs = FluidSimulator(L=1.0, N=40, visc=0.001, dt=0.25)
 # Buoyancy, negative is up in imshow
-fs.set_force(0, -0.1)
+# fs.set_force(0, -0.1)
 
 # For good effect, start by using a counter and every 30 or so
 # time steps add a new particle by calling fs.add_particle().
