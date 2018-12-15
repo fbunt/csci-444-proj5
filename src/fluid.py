@@ -221,6 +221,7 @@ class HeadOnScenario(SimRunner):
         self.trigger = 40
         self.sim.set_force(0, 0)
         self.counter = self.trigger - 1
+        self.step()
 
     def step(self):
         super().step()
@@ -253,6 +254,7 @@ class ShearScenario(SimRunner):
         self.up = True
         # self.sim.set_force(0, 0)
         self.counter = self.trigger - 1
+        self.step()
 
     def step(self):
         super().step()
@@ -264,7 +266,7 @@ class ShearScenario(SimRunner):
 
     @staticmethod
     def new():
-        fs = FluidSimulator(1.0, 56, 0.001, 0.25)
+        fs = FluidSimulator(1.0, 64, 0.001, 0.25)
         fs.set_force(0, 0.0)
         return ShearScenario(fs)
 
