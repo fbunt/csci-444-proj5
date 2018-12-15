@@ -111,6 +111,7 @@ class Renderer:
             )
             print("Starting work thread")
             self._work_thread.start()
+            plt.savefig("first_frame.png", dpi=150)
             plt.show()
         finally:
             # Clean up
