@@ -101,6 +101,10 @@ class Renderer:
         self.last_data = _Data(self.sim.data(), 0, 0)
 
     def start_render(self):
+        """
+        Begins running and rendering the simulation. Can be used to resume
+        again after stopping.
+        """
         self._init_render()
         try:
             self._ani = animation.FuncAnimation(
