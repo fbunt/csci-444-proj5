@@ -70,7 +70,7 @@ def _sim_worker(msg_q, result_q, stepper):
 
 
 class Renderer:
-    def __init__(self, sim, interval=200, zmin=0, zmax=1.0, cmap=cm.magma):
+    def __init__(self, sim, interval=50, zmin=0, zmax=1.0, cmap=cm.magma):
         self.sim = sim
         self._zmin = zmin
         self._zmax = zmax
