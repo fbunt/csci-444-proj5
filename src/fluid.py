@@ -249,7 +249,6 @@ class ShearScenario(SimRunner):
         self.p2 = (-0.5 * lo2, 0, 0, -v, r)
         self.p3 = (0, 0.5 * lo2, -v, 0, r)
         self.p4 = (0, -0.5 * lo2, v, 0, r)
-        self.trigger = 20
         self.trigger = 30
         self.up = True
         # self.sim.set_force(0, 0)
@@ -266,7 +265,7 @@ class ShearScenario(SimRunner):
 
     @staticmethod
     def new():
-        fs = FluidSimulator(1.0, 64, 0.001, 0.25)
+        fs = FluidSimulator(1.0, 84, 0.001, 0.25)
         fs.set_force(0, 0.0)
         return ShearScenario(fs)
 
