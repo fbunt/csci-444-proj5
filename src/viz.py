@@ -70,7 +70,7 @@ def _sim_worker(msg_q, result_q, stepper):
 
 
 class Renderer:
-    def __init__(self, sim, interval=200, zmin=0, zmax=1.5, cmap=cm.magma):
+    def __init__(self, sim, interval=200, zmin=0, zmax=1.0, cmap=cm.magma):
         self.sim = sim
         self._zmin = zmin
         self._zmax = zmax
@@ -122,7 +122,7 @@ class Renderer:
             try:
                 self._msg_q.put(_get_kill_msg(), block=True, timeout=2)
             except Empty:
-                print("Could not cleanly kill woker thread")
+                print("Could not cleanly kill work thread")
             self._work_thread = None
 
     def _init_render(self):
