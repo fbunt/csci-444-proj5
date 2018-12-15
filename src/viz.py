@@ -192,8 +192,10 @@ class Renderer:
 def _get_time_str(seconds):
     dur = pdm.duration(seconds=seconds)
     ms = int(dur.microseconds * 1e-3)
-    title = f"{dur.hours:02}:{dur.minutes:02}:{dur.seconds:02}:{ms:03}"
-    return title
+    tstr = (
+        f"{dur.hours:02}:{dur.minutes:02}:{dur.remaining_seconds:02}:{ms:03}"
+    )
+    return tstr
 
 
 def _get_iteration_str(it):
