@@ -22,9 +22,17 @@ class GridVector:
                 np.linspace(-L / 2.0, L / 2.0, N, endpoint=True),
                 np.linspace(-L / 2.0, L / 2.0, N, endpoint=True),
             )
+            self.x_min = -L / 2.0
+            self.x_max = L / 2.0
+            self.y_min = -L / 2.0
+            self.y_max = L / 2.0
         else:
             self.x = np.zeros((N, N))
             self.y = np.zeros((N, N))
+            self.x_min = 0
+            self.x_max = L
+            self.y_min = 0
+            self.y_max = L
 
 
 class FluidSimulator:
@@ -125,7 +133,7 @@ class FluidSimulator:
         self.its += 1
         self.elapsed = self.its * self.dt
 
-    def add_particle(self, x0, y0, u0, v0, r):
+    def add_particle(self, x0, y0, u0, v0, r, density=1):
         """
         To be used heavily, inputs are:
             x0 - x coordinate of center
@@ -140,7 +148,7 @@ class FluidSimulator:
         ).astype(float)
         self.U.x += t * u0
         self.U.y += t * v0
-        self.rho += t
+        self.rho += t * density
 
     def set_force(self, ax, ay):
         """
@@ -151,11 +159,114 @@ class FluidSimulator:
         self.A.y = ay
 
 
-def get_test_simulation():
-    fs = FluidSimulator(L=1.0, N=52, visc=0.001, dt=0.25)
-    # Buoyancy, negative is up in imshow
-    fs.set_force(0, -0.1)
-    return fs
+class SimRunner:
+    def __init__(self, sim):
+        self.sim = sim
+        self.iteration = sim.its
+        self.time = 0
+
+    def step(self):
+        self.sim.time_step()
+        self.iteration = self.sim.its
+        self.time = self.sim.elapsed
+
+    def data(self):
+        # Up is up
+        return self.sim.rho[::-1, :]
+
+    def add_particle(self, x, y, vx, vy, r=0.1, den=1):
+        self.sim.add_particle(x, y, vx, vy, r, den)
+
+
+class VortexScenario(SimRunner):
+    def __init__(self, sim):
+        super().__init__(sim)
+        self.counter = 0
+        lo2 = self.sim.lo2
+        v = 0.5
+        self.p1 = (0.5 * lo2, 0, -v, v, 0.1)
+        self.p2 = (0, 0.5 * lo2, -v, -v, 0.1)
+        self.p3 = (-0.5 * lo2, 0, v, -v, 0.1)
+        self.p4 = (0, -0.5 * lo2, v, v, 0.1)
+
+        self.sim.set_force(0, 0.0)
+        self.add_particle(0, 0, 0, 0, 0.2)
+
+    def step(self):
+        super().step()
+        self.counter += 1
+        if self.counter >= 30:
+            self.add_particle(*self.p1)
+            self.add_particle(*self.p2)
+            self.add_particle(*self.p3)
+            self.add_particle(*self.p4)
+            self.counter = 0
+
+    @staticmethod
+    def new():
+        fs = FluidSimulator(1.0, 52, 0.001, 0.25)
+        fs.set_force(0, 0.1)
+        return ShearScenario(fs)
+
+
+class HeadOnScenario(SimRunner):
+    def __init__(self, sim):
+        super().__init__(sim)
+        lo2 = self.sim.lo2
+        v = 0.4
+        # r = 0.15
+        r = 0.15
+        self.p1 = (0.5 * lo2, 0, -v, 0, r)
+        self.p2 = (-0.5 * lo2, 0, v, 0, r)
+        self.trigger = 40
+        self.sim.set_force(0, 0)
+        self.counter = self.trigger - 1
+
+    def step(self):
+        super().step()
+        self.counter += 1
+        if self.counter >= self.trigger:
+            self.add_particle(*self.p1)
+            self.add_particle(*self.p2)
+            self.counter = 0
+
+    @staticmethod
+    def new():
+        fs = FluidSimulator(1.0, 52, 0.001, 0.25)
+        fs.set_force(0, 0.0)
+        return ShearScenario(fs)
+
+
+class ShearScenario(SimRunner):
+    def __init__(self, sim):
+        super().__init__(sim)
+        lo2 = self.sim.lo2
+        # v=3, r=0.15, trig=40
+        v = 0.6
+        r = 0.15
+        self.p1 = (0.5 * lo2, 0, 0, v, r)
+        self.p2 = (-0.5 * lo2, 0, 0, -v, r)
+        self.p3 = (0, 0.5 * lo2, -v, 0, r)
+        self.p4 = (0, -0.5 * lo2, v, 0, r)
+        self.trigger = 20
+        self.trigger = 30
+        self.up = True
+        # self.sim.set_force(0, 0)
+        self.counter = self.trigger - 1
+
+    def step(self):
+        super().step()
+        self.counter += 1
+        if self.counter >= self.trigger:
+            self.add_particle(*self.p1)
+            self.add_particle(*self.p2)
+            self.counter = 0
+
+    @staticmethod
+    def new():
+        fs = FluidSimulator(1.0, 56, 0.001, 0.25)
+        fs.set_force(0, 0.0)
+        return ShearScenario(fs)
 
 
 # There is a bug I haven't tracked that makes certain values of N error out
