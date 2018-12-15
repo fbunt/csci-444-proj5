@@ -251,7 +251,6 @@ class ShearScenario(SimRunner):
         self.p4 = (0, -0.5 * lo2, v, 0, r)
         self.trigger = 30
         self.up = True
-        # self.sim.set_force(0, 0)
         self.counter = self.trigger - 1
         self.step()
 
