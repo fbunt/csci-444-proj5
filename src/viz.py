@@ -33,7 +33,7 @@ _Data = namedtuple("Data", ("data", "time", "iteration"))
 
 def _sim_worker(msg_q, result_q, stepper):
     """
-    Continually calculatest the next step and pushes the results to `result_q`
+    Continually calculates the next step and pushes the results to `result_q`
     """
     stop = False
     pause = False
